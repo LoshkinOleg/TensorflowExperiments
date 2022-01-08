@@ -1,0 +1,74 @@
+KnockKnockAndGibberish:
+Seems to recognize knock knock jokes fairly consistently (returns ~0.7 for knock knock jokes) but false identifies any meaningful sentance as a knock knock joke.
+Perhaps it was trained to detect meaningful sentances?
+Going to append dataset with some meaningful sentances.
+There's also a problem I think: BERT is capable to seeing separation in sentances. Knock knock jokes typically have very short sentences so it might be picking up on that rather than meaning?
+Making the machine learn the right thing is more difficult than expected!
+
+-------------------
+KnockKnockNoGibberish:
+model0:
+Seems to perform better but there is some wierdly low / wierdly high identifications:
+'I said if he wanted to take a broad view of the thing, it really began with Andrew Jackson.' is 0.456 joke.
+'Knock, Knock. Who’s there? Kanga. Kanga who? Actually, it’s kangaroo!' is 0.548 joke.
+Going to Train another model for a bit longer, see if that makes it any better.
+
+model1:
+Technically performs better but I think it's still only picking up on the punctuation rather than the knock knock pattern:
+'When he was nearly thirteen, my brother Jem got his arm badly broken at the elbow.' is 0.044 joke, as expected but
+'Hello, Hello. How are you? Good. Very good? That is good to hear!' is 0.822 joke, which is more than
+'Knock, Knock. Who’s there? Kanga. Kanga who? Actually, it’s kangaroo!' which is at 0.682 joke.
+Not sure how I'm going to distract the machine from the punctuation other than coming up with hand made sentances.
+
+-----------------
+2022.01.08:
+Gonna experiment with submodels / layers / "sub"-neurons
+
+Fixed PyCharm not autocompleting keras by following this advice:
+https://issueexplorer.com/issue/tensorflow/tensorflow/53144
+
+Trained a nn to detect whether a value between 1 and 100 is over 50 with pretty much flawless accuracy.
+Tried to train nn to detect even numbers and apparently it's very complicated for nn? Dropping that idea.
+
+KnockPatternDetector1 has been trained to detect the XXXXX, XXXXX pattern. Doesn't seem to give much importance to ending punctuation.
+
+Generating KnockPatternDetector2 with longer training time.
+~30 minutes training
+random.seed = 1
+dataset of size 500+500, all entries are 14 chars long
+training / testing datasets stratified
+input -> bert -> dropout at 0.1 -> dense output with sigmoid activation
+adam optimizer with 0.01 epsilon
+binary crossentropy loss
+metrics: binary accuracy, precision, recall
+30 epochs
+
+Found a good post on how to reduce trained model size: https://stackoverflow.com/questions/51957336/how-to-properly-reduce-the-size-of-a-tensorflow-savedmodel
+
+For some reason the thing still really likes ',' (more than '!') and really dislikes '?'
+'Knock, knock!' : 0.886
+'Knock, knock.' : 0.759
+'Knock, knock,' : 0.949
+'Knock, knock ' : 0.852
+'Knock, knock?' : 0.246
+
+So yeah, I don't think it's sensitive to the last character being a '!' .
+Same goes for the middle punctuation:
+'Knock, knock!' : 0.886
+'Knock  knock!' : 0.028
+'Knock. knock!' : 0.895
+'Knock! knock!' : 0.036
+'Knock? knock!' : 0.674
+
+But it does respond strongly to the pattern of <word>, <word>! no matter the length of the word:
+'asdfg, asdfg!', : 0.912
+'asdfgh, asdfgh!', : 0.933
+'asdfghj, asdfghj!', : 0.949
+'asdfghjk, asdfghjk!', : 0.963
+'asdfghjkl, asdfghjkl!' : 0.969
+
+Gonna see if the word being the same or not matters. I think it does? But not by a lot apparently, either that or it's a coincidence.
+'Knock, knock!' : 0.886
+'Bark, bark!' : 0.917
+'Knock, bark!' : 0.858
+'Bark, knock!' : 0.874
